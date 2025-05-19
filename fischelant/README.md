@@ -5,13 +5,13 @@ Two predefined choreographies are implemented: `beg` and `smell`. These can be t
 ## 📁 Project Structure
 
 project/
-│
-├── main_controller.py # Main entry point: runs choreographies based on CLI args
-├── kgt_control.py # Handles motor logic (left/right, up/down, pulsed)
-├── hydraulik.py # Handles hydraulic valve logic (open/close per side)
-├── sensorik.py # Stub for future sensor integration
-├── shared/
-│ └── config.py # Contains all GPIO pin mappings (valves, motors, sensors)
+main_controller.py # Main entry point: runs choreographies based on CLI args
+  modules/
+    kgt_control.py # Handles motor logic (left/right, up/down, pulsed)
+    hydraulik.py # Handles hydraulic valve logic (open/close per side)
+    sensorik.py # Stub for future sensor integration
+  shared/
+    config.py # Contains all GPIO pin mappings (valves, motors, sensors)
 
 ## ⚙️ GPIO Pin Configuration
 
