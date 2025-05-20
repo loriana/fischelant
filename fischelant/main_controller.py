@@ -88,7 +88,7 @@ def perform_chewing():
         print("Resetting hydraulics (back to zero), retracting cylinders")
         hydraulik._open_valves('left', pressure=False) 
         hydraulik._open_valves('right', pressure=False)
-        hydraulik.hold_position(1)
+        hydraulik.hold_position(chewing_durations['hood_down_at_start'])
 
         for i in range(4):  # repeat chewing pattern 4 times
             '''

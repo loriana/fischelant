@@ -21,6 +21,7 @@ begging = {
 }
 
 chewing = {
+    "hood_down_at_start": 20,
     "cycle_0": 1,
     "cycle_1": 0.5,
     "cycle_2": 0.2,
