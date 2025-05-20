@@ -5,7 +5,7 @@ from modules.hydraulik import Hydraulik
 from modules.kgt_control import KGTControl
 from modules.sensorik import Sensorik
 from shared.config import hydraulik as hydraulik_pins, kgt_control as kgt_pins, sensors as sensor_pins
-from shared.choreography_durations import smelling as smelling_durations, begging as begging_durations
+from shared.choreography_durations import smelling as smelling_durations, begging as begging_durations, chewing as chewing_durations
 
 
 def perform_smelling():
@@ -39,27 +39,27 @@ def perform_begging():
 
     try:
         print("Step 1: Hood up slowly for 3 seconds")
-        run_motor_with_pulses(begging_durations["up_slow_1"], "up")
+        kgt.run_motor_with_pulses(begging_durations["up_slow_1"], "up")
 
         print("Holding up position for 2 seconds")
         time.sleep(begging_durations["hold_1"])
 
         print("Step 2: Hood down completely (do a 3s descent)")
-        run_motor_with_pulses(begging_durations["down_slow"], "down") #i'm doing a slow close, if you want a fast onem there's run_motor_for()
+        kgt.run_motor_with_pulses(begging_durations["down_slow"], "down") #i'm doing a slow close, if you want a fast onem there's run_motor_for()
         time.sleep(begging_durations["pause_after_down"])
 
         print("Step 3: Hood up for 4 seconds")
-        run_motor_with_pulses(begging_durations["up_again"], "up")
+        kgt.run_motor_with_pulses(begging_durations["up_again"], "up")
         print("Holding up position for 2 seconds")
         time.sleep(begging_durations["hold_2"])
 
         print("Step 4: Hood up to max (3s more)")
-        run_motor_with_pulses(begging_durations["up_to_max"], "up")
+        kgt.run_motor_with_pulses(begging_durations["up_to_max"], "up")
         print("Holding up position for 1 second")
         time.sleep(begging_durations["hold_3"])
 
         print("Step 5: Hood down for 2 seconds")
-        run_motor_with_pulses(begging_durations["final_down"], "down")
+        kgt.run_motor_with_pulses(begging_durations["final_down"], "down")
 
         if sensor_pin is not None:
             print("Step 6: Waiting for sensor (10s timeout)...")
@@ -67,15 +67,62 @@ def perform_begging():
             while time.time() - start_time < begging_durations["sensor_timeout"]:
                 if GPIO.input(sensor_pin) == GPIO.HIGH:
                     print("Sensor detected! Closing hood quickly.")
-                    run_motor_for(begging_durations["close_fast"], "down") # this is not pulsed and thus will close fast
+                    kgt.run_motor_for(begging_durations["close_fast"], "down") # this is not pulsed and thus will close fast
                     return
                 time.sleep(0.1)
 
-             print("No sensor detected within 10 seconds. Closing hood quickly.")
-            run_motor_for(begging_durations["close_fast"], "down") # this is not pulsed and thus will close fast
+            print("No sensor detected within 10 seconds. Closing hood quickly.")
+            kgt.run_motor_for(begging_durations["close_fast"], "down") # this is not pulsed and thus will close fast
     finally:
         kgt.cleanup()
         sensor_pin.cleanup()
+
+
+
+
+def perform_chewing():
+    hydraulik = Hydraulik(hydraulik_pins)
+    kgt = KGTControl(kgt_pins)
+
+    try:
+        print("Resetting hydraulics (back to zero), retracting cylinders")
+        hydraulik._open_valves('left', pressure=False) 
+        hydraulik._open_valves('right', pressure=False)
+        hydraulik.hold_position(1)
+
+        for i in range(4):  # repeat chewing pattern 4 times
+            '''
+            Chewing	Hood up for 1 sec with Z1 up 
+            Chewing	Down for 1 sec  with Z1 down
+            ----
+            Chewing	Hood up for 1 sec  with Z2 up
+            Chewing	Down for 1 sec  with Z2 down
+            '''
+            d = chewing_durations.get(f'cycle_{i}', 1) # Cosima wanted duration variations, defaults to 1 if duration not found in dict
+            print(f"Cycle {i+1}")
+            # ---- chew left side ----
+            print("Z1 up + hood up")
+            hydraulik.lift_side_fast('left', d)  # Lift Z1 (left)
+            kgt.run_motor_for(d, 'up') # hood up
+
+            print("Z1 down + hood down")
+            hydraulik._open_valves('left', pressure=False) #lower
+            hydraulik.hold_position(d) #hold through this call, cause the lowering doesn't have a duration opt
+            kgt.run_motor_for(d, 'down') 
+
+            # ---- chew right side ----
+            print("Z2 up + hood up")
+            hydraulik.lift_side_fast('right', d)  # Zylinder 2 = right
+            kgt.run_motor_for(d, 'up')
+
+            print("Z2 down + hood down")
+            hydraulik._open_valves('right', pressure=False)
+            hydraulik.hold_position(d)
+            kgt.run_motor_for(d, 'down')
+
+    finally:
+        hydraulik.cleanup()
+        kgt.cleanup()
 
 
 
@@ -85,7 +132,8 @@ def main():
     parser = argparse.ArgumentParser(description="Fischelant Main Controller")
     parser.add_argument("command", choices=[
         "smelling", "HYDR_lift_side_left", "HYDR_lift_side_right", "HYDR_move_both_until_limit", "HYDR_lower",
-        "begging", "KGT_run_motor_for_right", "KGT_run_motor_for_left", "KGT_run_motor_pulsed_right", "KGT_run_motor_pulsed_left"], 
+        "begging", "KGT_run_motor_for_right", "KGT_run_motor_for_left", "KGT_run_motor_pulsed_right", "KGT_run_motor_pulsed_left",
+        "chewing"], 
         help="Routine or action to execute")
     parser.add_argument("--duration", type=float, default=2.0, help="Duration in seconds for lift/lower")
 
@@ -118,6 +166,10 @@ def main():
             kgt.run_motor_with_pulses(args.duration, 'right')
         elif args.command == "KGT_run_motor_pulsed_left":
             kgt.run_motor_with_pulses(args.duration, 'left')
+
+        elif args.command == "chewing":
+            perform_chewing()
+
     finally:
         hydraulik.cleanup()
         kgt.cleanup()

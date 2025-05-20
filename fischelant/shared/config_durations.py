@@ -19,3 +19,10 @@ begging = {
     "sensor_timeout": 10,
     "close_fast": 5,
 }
+
+chewing = {
+    "cycle_0": 1,
+    "cycle_1": 0.5,
+    "cycle_2": 0.2,
+    "cycle_3": 0.7,
+}

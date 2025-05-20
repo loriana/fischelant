@@ -71,4 +71,4 @@ class KGTControl:
 
     def cleanup(self):
         """Cleanup GPIO settings."""
-        GPIO.cleanup()
+        GPIO.cleanup(self.pins.values())

@@ -31,17 +31,17 @@ class Hydraulik:
             B = self.valves['right_B']
 
         if pressure:
-            # extend cylinder
-            GPIO.output(P, GPIO.HIGH)
-            GPIO.output(A, GPIO.HIGH)
-            GPIO.output(T, GPIO.LOW)
-            GPIO.output(B, GPIO.LOW)
+            # extend cylinder by by allowing fluid to flow in
+            GPIO.output(P, GPIO.HIGH) # turn on pump (apply pressure)
+            GPIO.output(A, GPIO.HIGH) # open valve A to let fluid into cylinder
+            GPIO.output(T, GPIO.LOW)  # close return to tank
+            GPIO.output(B, GPIO.LOW)  # close valve B
         else:
-            # retract cylinder
-            GPIO.output(P, GPIO.LOW)
-            GPIO.output(A, GPIO.LOW)
-            GPIO.output(T, GPIO.HIGH)
-            GPIO.output(B, GPIO.HIGH)
+            # retract cylinder by draining fluid
+            GPIO.output(P, GPIO.LOW) # turn off pump (stop pressure)
+            GPIO.output(A, GPIO.LOW) # close valve A
+            GPIO.output(T, GPIO.HIGH) # open tank valve to allow fluid to flow back in
+            GPIO.output(B, GPIO.HIGH) # open valve B to drain fluid
 
     def _close_valves(self, side):
         '''
@@ -74,6 +74,15 @@ class Hydraulik:
             self._close_valves(side)
             time.sleep(pulse_time * close_percentage)  # valves closed Y% of pulse
 
+    def lift_side_fast(self, side, duration):
+        """
+        Continuously opens the valves to lift the specified side for the given duration (in seconds).
+        Unlike lift_side it does NOT use pulsed control — it's a fast, uninterrupted movement.
+        """
+        self._open_valves(side, pressure=True)
+        time.sleep(duration)
+        self._close_valves(side)
+
     def hold_position(self, duration):
         # close all valves to hold position
         for side in ['left', 'right']:
@@ -93,4 +102,4 @@ class Hydraulik:
             self._close_valves(side)
 
     def cleanup(self):
-        GPIO.cleanup()
+        GPIO.cleanup(self.pins.values())

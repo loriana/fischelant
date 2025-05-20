@@ -1,12 +1,14 @@
 import RPi.GPIO as GPIO
 
 class Sensorik:
-    def __init__(self, pins):
+    '''
+    Initialises ONE specific sensor pin that is given as an argument.
+    '''
+    def __init__(self, sensor_pin):
         """
-        pins: dict with keys:
-          - 'SENSOR_PIN' (GPIO pin number for the sensor)
+        sensor_pin: GPIO pin number for the sensor
         """
-        self.pins = pins
+        self.sensor_pin = sensor_pin
         GPIO.setmode(GPIO.BCM)
         self.setup()
 
@@ -14,18 +16,14 @@ class Sensorik:
         """
         Initialize sensor pin as input with pull-down resistor.
         """
-        sensor_pin = self.pins.get('SENSOR_PIN')
-        if sensor_pin is None:
-            raise ValueError("SENSOR_PIN not provided in pins dictionary")
-        GPIO.setup(sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(self.sensor_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     def read_sensor(self):
         """
         Read and return the sensor state (GPIO.HIGH or GPIO.LOW).
         """
-        sensor_pin = self.pins['SENSOR_PIN']
-        return GPIO.input(sensor_pin)
+        return GPIO.input(self.sensor_pin)
 
     def cleanup(self):
-        """Cleanup GPIO settings."""
-        GPIO.cleanup()
+        """Cleanup GPIO settings for the sensor pin."""
+        GPIO.cleanup(self.sensor_pin)
