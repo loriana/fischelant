@@ -102,4 +102,4 @@ class Hydraulik:
             self._close_valves(side)
 
     def cleanup(self):
-        GPIO.cleanup(self.pins.values())
+        GPIO.cleanup()
